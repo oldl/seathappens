@@ -17,6 +17,7 @@ function normalizePseudo(value: string) {
 
 export default function WallParticipants({ initialParticipants }: WallParticipantsProps) {
   const [optimisticParticipant, setOptimisticParticipant] = useState<Participant | null>(null);
+  const [activeParticipant, setActiveParticipant] = useState<Participant | null>(null);
 
   useEffect(() => {
     try {
@@ -70,14 +71,68 @@ export default function WallParticipants({ initialParticipants }: WallParticipan
   }
 
   return (
-    <div className="grid gap-4.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(135px, 1fr))" }}>
-      {participants.map((participant) => (
-        <ParticipantCard
-          key={participant.id}
-          pseudo={participant.pseudo}
-          src={getAvatarSrc(participant.avatar_type, participant.avatar_value)}
-        />
-      ))}
-    </div>
+    <>
+      <div className="grid gap-6 sm:gap-7" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))" }}>
+        {participants.map((participant) => (
+          <ParticipantCard
+            key={participant.id}
+            pseudo={participant.pseudo}
+            projectIdea={participant.project_idea}
+            themeFocus={participant.theme_focus}
+            src={getAvatarSrc(participant.avatar_type, participant.avatar_value)}
+            onOpen={() => setActiveParticipant(participant)}
+          />
+        ))}
+      </div>
+
+      {activeParticipant && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5 py-8 backdrop-blur-[2px]"
+          onClick={() => setActiveParticipant(null)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-[30px] bg-cream p-6 shadow-[0_14px_0_rgba(0,0,0,0.14)] sm:p-7"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setActiveParticipant(null)}
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-ink"
+              aria-label="Fermer"
+            >
+              ×
+            </button>
+
+            <div className="flex items-center gap-4 pr-10">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-white">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getAvatarSrc(activeParticipant.avatar_type, activeParticipant.avatar_value)}
+                  alt={activeParticipant.pseudo}
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+              <div>
+                <div className="font-display text-2xl font-extrabold text-ink">{activeParticipant.pseudo}</div>
+                <div className="mt-1 inline-block rounded-full bg-sh-yellow px-3 py-1 font-display text-xs font-bold text-ink">
+                  {activeParticipant.theme_focus}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 font-body text-sm font-semibold text-ink/55">
+              Voici ce que cette personne a envie de construire :
+            </div>
+
+            <div className="mt-5 rounded-[24px] bg-white px-4 py-4 shadow-[0_4px_0_rgba(0,0,0,0.05)]">
+              <div className="font-body text-xs font-bold uppercase tracking-[0.18em] text-ink/45">Envie du moment</div>
+              <p className="mt-2 font-body text-base font-medium leading-relaxed text-ink">
+                {activeParticipant.project_idea}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

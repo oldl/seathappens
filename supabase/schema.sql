@@ -28,9 +28,13 @@ alter table participants
 alter table participants
   add column if not exists theme_focus text not null default '';
 
+drop policy if exists "Public read access" on participants;
+
 create policy "Public read access"
   on participants for select
   using (true);
+
+drop policy if exists "Public insert access" on participants;
 
 create policy "Public insert access"
   on participants for insert

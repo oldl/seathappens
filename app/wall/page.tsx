@@ -40,12 +40,12 @@ export default async function WallPage() {
           ← Modifier mon avatar
         </a>
 
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="inline-block rounded-[22px] bg-white px-4.5 py-2.5 -rotate-2 shadow-[0_6px_0_rgba(0,0,0,0.08)]">
               <div className="font-display text-[28px] font-extrabold text-ink leading-none">SEATHAPPENS</div>
             </div>
-            <div className="mt-3 inline-block rounded-full bg-sh-yellow px-4.5 py-2 font-display text-sm font-bold text-ink shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+            <div className="mt-4 inline-block rounded-full bg-sh-yellow px-4.5 py-2 font-display text-sm font-bold text-ink shadow-[0_4px_0_rgba(0,0,0,0.08)]">
               {participantCount} {participantCount > 1 ? "personnes" : "personne"} dans la place 🎉
             </div>
           </div>
