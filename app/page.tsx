@@ -9,12 +9,14 @@ import DrawCanvas from "@/components/DrawCanvas";
 import AvatarPreview from "@/components/AvatarPreview";
 
 type AvatarTab = "sticker" | "draw";
-type ErrorKind = "" | "pseudo" | "duplicate" | "avatar" | "server";
+type ErrorKind = "" | "pseudo" | "project" | "avatar" | "duplicate" | "server";
 const JUST_JOINED_KEY = "seathappens_just_joined";
 
 export default function HomePage() {
   const router = useRouter();
   const [pseudo, setPseudo] = useState("");
+  const [projectIdea, setProjectIdea] = useState("");
+  const [themeFocus, setThemeFocus] = useState("");
   const [avatarTab, setAvatarTab] = useState<AvatarTab>("sticker");
   const [selectedSticker, setSelectedSticker] = useState(STICKER_DEFS[0].id);
   const [drawingDataUrl, setDrawingDataUrl] = useState("");
@@ -27,13 +29,20 @@ export default function HomePage() {
 
   const avatarReady = avatarTab === "sticker" ? true : hasDrawn;
   const trimmedPseudo = pseudo.trim();
+  const trimmedProjectIdea = projectIdea.trim();
+  const trimmedThemeFocus = themeFocus.trim();
   const pseudoTooLong = trimmedPseudo.length > 24;
-  const canJoin = trimmedPseudo.length > 0 && !pseudoTooLong && avatarReady && !submitting;
+  const projectReady = trimmedProjectIdea.length > 0 && trimmedThemeFocus.length > 0;
+  const canJoin = trimmedPseudo.length > 0 && !pseudoTooLong && projectReady && avatarReady && !submitting;
 
   async function handleJoin() {
     const pseudoTrimmed = pseudo.trim();
     if (!pseudoTrimmed || pseudoTooLong) {
       setError("pseudo");
+      return;
+    }
+    if (!trimmedProjectIdea || !trimmedThemeFocus) {
+      setError("project");
       return;
     }
     if (avatarTab === "draw" && !hasDrawn) {
@@ -53,7 +62,13 @@ export default function HomePage() {
     try {
       sessionStorage.setItem(
         JUST_JOINED_KEY,
-        JSON.stringify({ pseudo: pseudoTrimmed, avatar_type, avatar_value })
+        JSON.stringify({
+          pseudo: pseudoTrimmed,
+          project_idea: trimmedProjectIdea,
+          theme_focus: trimmedThemeFocus,
+          avatar_type,
+          avatar_value,
+        })
       );
     } catch {
       // sessionStorage may be unavailable — non-fatal, wall will just fetch fresh
@@ -67,7 +82,13 @@ export default function HomePage() {
 
     const { error: insertError } = await supabase
       .from("participants")
-      .insert({ pseudo: pseudoTrimmed, avatar_type, avatar_value });
+      .insert({
+        pseudo: pseudoTrimmed,
+        project_idea: trimmedProjectIdea,
+        theme_focus: trimmedThemeFocus,
+        avatar_type,
+        avatar_value,
+      });
 
     if (insertError) {
       setSubmitting(false);
@@ -145,7 +166,46 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="font-display font-bold text-xl text-ink mt-7 mb-3.5">2. TON AVATAR</div>
+            <div className="font-display font-bold text-xl text-ink mt-7 mb-3">2. TA VIBE</div>
+            <div className="mb-4 rounded-[26px] bg-white/60 p-4 sm:p-5" style={{ border: "2px solid #E5DFD3" }}>
+              <label className="block">
+                <div className="mb-2 font-body text-sm font-semibold text-ink">Qu&apos;as-tu envie de construire ?</div>
+                <textarea
+                  value={projectIdea}
+                  onChange={(e) => {
+                    setProjectIdea(e.target.value);
+                    setError("");
+                  }}
+                  placeholder="Une app, un outil IA, une expérience, un side-project..."
+                  rows={3}
+                  className="w-full resize-none rounded-2xl bg-white px-4 py-3 font-body text-base font-medium text-ink outline-none transition"
+                  style={{ border: `2px solid ${error === "project" && !trimmedProjectIdea ? "#E8543E" : "#E5DFD3"}` }}
+                />
+              </label>
+
+              <label className="mt-4 block">
+                <div className="mb-2 font-body text-sm font-semibold text-ink">Quelle vibe ou thématique ?</div>
+                <input
+                  type="text"
+                  value={themeFocus}
+                  onChange={(e) => {
+                    setThemeFocus(e.target.value);
+                    setError("");
+                  }}
+                  placeholder="creativite, productivite, sante, culture, climat, fun..."
+                  className="w-full rounded-2xl bg-white px-4 py-3 font-body text-base font-medium text-ink outline-none transition"
+                  style={{ border: `2px solid ${error === "project" && !trimmedThemeFocus ? "#E8543E" : "#E5DFD3"}` }}
+                />
+              </label>
+
+              {error === "project" && (
+                <div className="mt-3 text-sm font-semibold text-[#E8543E]">
+                  Donne-nous ton idee et sa vibe pour entrer dans la salle ✨
+                </div>
+              )}
+            </div>
+
+            <div className="font-display font-bold text-xl text-ink mt-7 mb-3.5">3. TON AVATAR</div>
             <div className="flex gap-2.5 mb-4 flex-wrap">
               <button
                 type="button"

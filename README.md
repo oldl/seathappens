@@ -1,7 +1,8 @@
 # SeatHappens
 
-Fun, colorful, no-login event registration app. Pick a pseudo, pick or draw an
-avatar, hit "Rejoindre la salle", and show up on the public wall.
+Fun, colorful, no-login event registration app. Pick a pseudo, say what you
+want to build and in which theme, pick or draw an avatar, hit "Rejoindre la
+salle", and show up on the public wall.
 
 ## Stack
 
@@ -51,11 +52,11 @@ the public wall.
 
 ## How it works
 
-- `app/page.tsx` — registration form (pseudo + sticker grid or draw canvas),
-  validates pseudo/avatar client-side, stores the just-created participant in
-  `sessionStorage` for a snappy wall transition, inserts into `participants`
-  via Supabase, then routes to `/wall` with clear handling for `23505`
-  duplicate pseudo errors.
+- `app/page.tsx` — registration form (pseudo + project intent + sticker grid
+  or draw canvas), validates pseudo/project/avatar client-side, stores the
+  just-created participant in `sessionStorage` for a snappy wall transition,
+  inserts into `participants` via Supabase, then routes to `/wall` with clear
+  handling for `23505` duplicate pseudo errors.
 - `app/wall/page.tsx` — server component, fetches all participants fresh on
   every request (`export const dynamic = "force-dynamic"`), while a small
   client component merges the optimistic "just joined" participant from
@@ -74,7 +75,14 @@ the public wall.
 
 ## Schema changes
 
-No schema change is required. `supabase/schema.sql` is used as-is.
+The registration flow now stores two extra required text fields on
+`participants`:
+- `project_idea`
+- `theme_focus`
+
+If your Supabase project was already initialized before this change, rerun the
+updated [supabase/schema.sql](/Users/olivier/Documents/projects/mini-apps/seathappens/supabase/schema.sql:1)
+in the SQL editor so the new columns and insert policy are applied.
 
 ## MVP notes / good next steps
 

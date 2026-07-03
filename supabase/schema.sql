@@ -6,6 +6,8 @@ create extension if not exists "pgcrypto";
 create table if not exists participants (
   id uuid primary key default gen_random_uuid(),
   pseudo text not null,
+  project_idea text not null,
+  theme_focus text not null,
   avatar_type text not null check (avatar_type in ('sticker', 'draw')),
   avatar_value text not null,
   created_at timestamp with time zone default now()
@@ -20,6 +22,12 @@ create unique index if not exists participants_pseudo_unique_idx
 -- Anyone can read the wall, and anyone can insert their own entry.
 alter table participants enable row level security;
 
+alter table participants
+  add column if not exists project_idea text not null default '';
+
+alter table participants
+  add column if not exists theme_focus text not null default '';
+
 create policy "Public read access"
   on participants for select
   using (true);
@@ -29,4 +37,6 @@ create policy "Public insert access"
   with check (
     char_length(trim(pseudo)) > 0
     and char_length(pseudo) <= 24
+    and char_length(trim(project_idea)) > 0
+    and char_length(trim(theme_focus)) > 0
   );

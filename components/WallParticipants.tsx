@@ -23,7 +23,10 @@ export default function WallParticipants({ initialParticipants }: WallParticipan
       const raw = sessionStorage.getItem(JUST_JOINED_KEY);
       if (!raw) return;
 
-      const parsed = JSON.parse(raw) as Pick<Participant, "pseudo" | "avatar_type" | "avatar_value">;
+      const parsed = JSON.parse(raw) as Pick<
+        Participant,
+        "pseudo" | "project_idea" | "theme_focus" | "avatar_type" | "avatar_value"
+      >;
       const alreadyPresent = initialParticipants.some(
         (participant) => normalizePseudo(participant.pseudo) === normalizePseudo(parsed.pseudo)
       );
@@ -32,6 +35,8 @@ export default function WallParticipants({ initialParticipants }: WallParticipan
         setOptimisticParticipant({
           id: "optimistic-join",
           pseudo: parsed.pseudo,
+          project_idea: parsed.project_idea || "",
+          theme_focus: parsed.theme_focus || "",
           avatar_type: parsed.avatar_type,
           avatar_value: parsed.avatar_value,
           created_at: new Date().toISOString(),
