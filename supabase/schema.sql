@@ -41,6 +41,4 @@ create policy "Public insert access"
   with check (
     char_length(trim(pseudo)) > 0
     and char_length(pseudo) <= 24
-    and char_length(trim(project_idea)) > 0
-    and char_length(trim(theme_focus)) > 0
   );

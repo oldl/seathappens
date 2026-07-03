@@ -37,7 +37,7 @@ export default function WallParticipants({ initialParticipants }: WallParticipan
           id: "optimistic-join",
           pseudo: parsed.pseudo,
           project_idea: parsed.project_idea || "",
-          theme_focus: parsed.theme_focus || "",
+          theme_focus: "",
           avatar_type: parsed.avatar_type,
           avatar_value: parsed.avatar_value,
           created_at: new Date().toISOString(),
@@ -78,7 +78,6 @@ export default function WallParticipants({ initialParticipants }: WallParticipan
             key={participant.id}
             pseudo={participant.pseudo}
             projectIdea={participant.project_idea}
-            themeFocus={participant.theme_focus}
             src={getAvatarSrc(participant.avatar_type, participant.avatar_value)}
             onOpen={() => setActiveParticipant(participant)}
           />
@@ -114,20 +113,22 @@ export default function WallParticipants({ initialParticipants }: WallParticipan
               </div>
               <div>
                 <div className="font-display text-2xl font-extrabold text-ink">{activeParticipant.pseudo}</div>
-                <div className="mt-1 inline-block rounded-full bg-sh-yellow px-3 py-1 font-display text-xs font-bold text-ink">
-                  {activeParticipant.theme_focus}
-                </div>
+                {activeParticipant.project_idea ? (
+                  <div className="mt-1 inline-block rounded-full bg-sh-yellow px-3 py-1 font-display text-xs font-bold text-ink">
+                    sa vibe
+                  </div>
+                ) : (
+                  <div className="mt-1 inline-block rounded-full bg-white px-3 py-1 font-display text-xs font-bold text-ink/55">
+                    pas de vibe partagee
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="mt-4 font-body text-sm font-semibold text-ink/55">
-              Voici ce que cette personne a envie de construire :
-            </div>
-
             <div className="mt-5 rounded-[24px] bg-white px-4 py-4 shadow-[0_4px_0_rgba(0,0,0,0.05)]">
-              <div className="font-body text-xs font-bold uppercase tracking-[0.18em] text-ink/45">Envie du moment</div>
+              <div className="font-body text-xs font-bold uppercase tracking-[0.18em] text-ink/45">Vibe du moment</div>
               <p className="mt-2 font-body text-base font-medium leading-relaxed text-ink">
-                {activeParticipant.project_idea}
+                {activeParticipant.project_idea || "Cette personne a prefere garder un peu de mystere pour l'instant."}
               </p>
             </div>
           </div>

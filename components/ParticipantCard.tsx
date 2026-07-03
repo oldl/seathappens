@@ -2,11 +2,10 @@ interface ParticipantCardProps {
   pseudo: string;
   src: string;
   projectIdea: string;
-  themeFocus: string;
   onOpen: () => void;
 }
 
-export default function ParticipantCard({ pseudo, src, projectIdea, themeFocus, onOpen }: ParticipantCardProps) {
+export default function ParticipantCard({ pseudo, src, projectIdea, onOpen }: ParticipantCardProps) {
   return (
     <button
       type="button"
@@ -19,8 +18,8 @@ export default function ParticipantCard({ pseudo, src, projectIdea, themeFocus, 
         <img src={src} alt={pseudo} className="max-w-full max-h-full object-contain" />
       </div>
       <div className="max-w-full truncate font-display text-base font-bold text-ink">{pseudo}</div>
-      <div className="line-clamp-1 text-[11px] font-semibold uppercase tracking-wide text-ink/45">
-        {themeFocus || projectIdea}
+      <div className="line-clamp-1 min-h-[16px] text-[11px] font-semibold uppercase tracking-wide text-ink/45">
+        {projectIdea || "Clique pour en savoir plus"}
       </div>
       <div className="mt-1 rounded-full bg-sh-purple/10 px-3 py-1 font-body text-xs font-semibold text-sh-purple">
         Voir sa vibe
