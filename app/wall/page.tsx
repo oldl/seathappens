@@ -35,7 +35,7 @@ export default async function WallPage() {
         <path d="M18 86C38 68 43 44 31 28C53 34 77 31 96 16C86 35 90 53 106 71C84 64 60 72 44 92" stroke="#FF6FA5" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
 
-      <div className="max-w-[1180px] mx-auto px-4 pt-7 pb-16 sm:px-5 sm:pt-8">
+      <div className="max-w-[1180px] mx-auto px-6 pt-10 pb-20 sm:px-8 sm:pt-10 lg:px-10">
         <a href="/" className="inline-block font-body font-semibold text-sm text-ink opacity-75 mb-4.5 no-underline">
           ← Modifier mon avatar
         </a>

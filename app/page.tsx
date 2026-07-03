@@ -103,7 +103,7 @@ export default function HomePage() {
       </svg>
       <div className="pointer-events-none absolute -left-10 top-[280px] h-[220px] w-[150px] rounded-[70%_30%_65%_35%/60%_40%_60%_40%] bg-[#FF9FC4] opacity-55" />
 
-      <div className="relative z-10 mx-auto max-w-[1180px] px-4 pb-16 pt-7 sm:px-5 sm:pt-8">
+      <div className="relative z-10 mx-auto max-w-[1180px] px-6 pb-16 pt-7 sm:px-8 sm:pt-8 lg:px-10">
         <div className="inline-block -rotate-2 rounded-[20px] bg-sh-yellow px-6 pb-4.5 pt-3.5 shadow-[0_6px_0_rgba(0,0,0,0.08)] sm:px-7">
           <div className="font-display text-[clamp(26px,4vw,40px)] font-extrabold tracking-wide text-ink leading-none">
             SEATHAPPENS
