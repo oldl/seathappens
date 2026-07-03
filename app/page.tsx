@@ -197,7 +197,7 @@ export default function HomePage() {
                 type="button"
                 onClick={handleJoin}
                 disabled={!canJoin}
-                className="flex items-center gap-2.5 rounded-full border-none px-8.5 py-4.5 font-display text-lg font-bold tracking-wide transition-transform duration-150 disabled:translate-y-0"
+                className="flex items-center gap-3 rounded-full border-none pl-7 pr-8 py-4.5 font-display text-lg font-bold tracking-wide transition-transform duration-150 disabled:translate-y-0 sm:pl-8 sm:pr-9"
                 style={
                   canJoin
                     ? { background: "#1A1A1A", color: "#fff", cursor: "pointer" }
