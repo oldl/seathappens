@@ -13,17 +13,19 @@ type ErrorKind = "" | "pseudo" | "avatar" | "duplicate" | "server";
 const JUST_JOINED_KEY = "seathappens_just_joined";
 const VIBE_OPTIONS = [
   "🚀 Lancer un side-project",
-  "🤖 Jouer avec l'IA",
   "🎨 Faire un truc creatif",
   "🌍 Imaginer un impact positif",
-  "🧪 Prototyper vite",
-  "🎉 Rencontrer des gens cool",
+  "🍽️ J'aime bien manger en ecoutant quelqu'un parler d'un truc",
+  "🩺 Prototyper en moins de 0,1 QAP un projet pour Partenamut",
+  "💥 J'ai une idee revolutionnaire qui va tout depoter",
+  "👨‍👩‍👦 Je veux expliquer le vibe coding a mes parents le dimanche midi",
 ] as const;
 
 export default function HomePage() {
   const router = useRouter();
   const [pseudo, setPseudo] = useState("");
   const [projectIdea, setProjectIdea] = useState("");
+  const [themeFocus, setThemeFocus] = useState("");
   const [avatarTab, setAvatarTab] = useState<AvatarTab>("sticker");
   const [selectedSticker, setSelectedSticker] = useState(STICKER_DEFS[0].id);
   const [drawingDataUrl, setDrawingDataUrl] = useState("");
@@ -37,6 +39,7 @@ export default function HomePage() {
   const avatarReady = avatarTab === "sticker" ? true : hasDrawn;
   const trimmedPseudo = pseudo.trim();
   const trimmedProjectIdea = projectIdea.trim();
+  const trimmedThemeFocus = themeFocus.trim();
   const pseudoTooLong = trimmedPseudo.length > 24;
   const canJoin = trimmedPseudo.length > 0 && !pseudoTooLong && avatarReady && !submitting;
 
@@ -66,7 +69,7 @@ export default function HomePage() {
         JSON.stringify({
           pseudo: pseudoTrimmed,
           project_idea: trimmedProjectIdea,
-          theme_focus: "",
+          theme_focus: trimmedThemeFocus,
           avatar_type,
           avatar_value,
         })
@@ -86,7 +89,7 @@ export default function HomePage() {
       .insert({
         pseudo: pseudoTrimmed,
         project_idea: trimmedProjectIdea,
-        theme_focus: "",
+        theme_focus: trimmedThemeFocus,
         avatar_type,
         avatar_value,
       });
@@ -246,12 +249,30 @@ export default function HomePage() {
               {projectIdea && (
                 <button
                   type="button"
-                  onClick={() => setProjectIdea("")}
+                  onClick={() => {
+                    setProjectIdea("");
+                    setError("");
+                  }}
                   className="mt-3 rounded-full bg-white px-3 py-1.5 font-body text-xs font-semibold text-ink/65"
                 >
                   Effacer mon vote
                 </button>
               )}
+              <label className="mt-4 block">
+                <div className="mb-2 font-body text-sm font-semibold text-ink">
+                  Un petit mot en plus ? Optionnel aussi.
+                </div>
+                <textarea
+                  value={themeFocus}
+                  onChange={(e) => {
+                    setThemeFocus(e.target.value);
+                    setError("");
+                  }}
+                  placeholder="Une idee, une blague, un contexte, un cri du coeur..."
+                  rows={4}
+                  className="w-full resize-none rounded-2xl border-2 border-[#E5DFD3] bg-white px-4 py-3 font-body text-sm font-medium text-ink outline-none transition"
+                />
+              </label>
             </div>
 
             <div className="mt-6.5">
