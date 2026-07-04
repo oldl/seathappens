@@ -218,7 +218,10 @@ export default function HomePage() {
             )}
 
             <div className="mt-7 rounded-[26px] bg-white/60 p-4 sm:p-5" style={{ border: "2px solid #E5DFD3" }}>
-              <div className="mb-2 font-display text-xl font-bold text-ink">3. TA VIBE</div>
+              <div className="font-display text-[clamp(22px,4vw,30px)] font-extrabold text-ink">
+                Confession a vibe coder - 16/07
+              </div>
+              <div className="mb-2 mt-1 font-display text-xl font-bold text-ink">3. TA VIBE</div>
               <div className="mb-3 font-body text-sm font-semibold text-ink">
                 Optionnel. Clique sur la vibe qui te ressemble le plus.
               </div>
