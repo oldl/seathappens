@@ -143,7 +143,7 @@ export default function HomePage() {
 
         <div className="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,620px)_minmax(260px,1fr)] lg:gap-12">
           <div>
-            <div className="font-display font-bold text-xl text-ink mb-3">1. TON PSEUDO</div>
+            <div className="font-display font-bold text-xl text-ink mb-3">1. TON PSEUDO <span className="text-[#E8543E]">*</span></div>
             <input
               type="text"
               value={pseudo}
@@ -278,12 +278,12 @@ export default function HomePage() {
               </label>
             </div>
 
-            <div className="mt-6.5">
+            <div className="mt-10">
               <button
                 type="button"
                 onClick={handleJoin}
                 disabled={!canJoin}
-                className="flex items-center gap-3 rounded-full border-none pl-7 pr-8 py-4.5 font-display text-lg font-bold tracking-wide transition-transform duration-150 disabled:translate-y-0 sm:pl-8 sm:pr-9"
+                className="flex w-full items-center justify-center gap-3 rounded-full border-none px-8 py-5 font-display text-xl font-bold tracking-wide transition-transform duration-150 disabled:translate-y-0"
                 style={
                   canJoin
                     ? { background: "#1A1A1A", color: "#fff", cursor: "pointer" }
