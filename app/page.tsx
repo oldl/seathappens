@@ -9,7 +9,7 @@ import DrawCanvas from "@/components/DrawCanvas";
 import AvatarPreview from "@/components/AvatarPreview";
 
 type AvatarTab = "sticker" | "draw";
-type ErrorKind = "" | "pseudo" | "avatar" | "duplicate" | "server";
+type ErrorKind = "" | "pseudo" | "duplicate" | "server";
 const JUST_JOINED_KEY = "seathappens_just_joined";
 const VIBE_SEPARATOR = " • ";
 const VIBE_OPTIONS = [
@@ -28,21 +28,27 @@ export default function HomePage() {
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [themeFocus, setThemeFocus] = useState("");
   const [avatarTab, setAvatarTab] = useState<AvatarTab>("sticker");
-  const [selectedSticker, setSelectedSticker] = useState(STICKER_DEFS[0].id);
+  const [selectedSticker, setSelectedSticker] = useState<string | null>(null);
+  const [randomStickerId] = useState(() => STICKER_DEFS[Math.floor(Math.random() * STICKER_DEFS.length)]?.id ?? STICKER_DEFS[0].id);
   const [drawingDataUrl, setDrawingDataUrl] = useState("");
   const [hasDrawn, setHasDrawn] = useState(false);
   const [error, setError] = useState<ErrorKind>("");
   const [submitting, setSubmitting] = useState(false);
 
+  const fallbackStickerId = selectedSticker ?? randomStickerId;
   const previewSrc =
-    avatarTab === "sticker" ? getStickerSrc(selectedSticker) : drawingDataUrl || getStickerSrc(STICKER_DEFS[0].id);
+    avatarTab === "draw" && hasDrawn ? drawingDataUrl : getStickerSrc(fallbackStickerId);
 
-  const avatarReady = avatarTab === "sticker" ? true : hasDrawn;
   const trimmedPseudo = pseudo.trim();
   const serializedVibes = selectedVibes.join(VIBE_SEPARATOR);
   const trimmedThemeFocus = themeFocus.trim();
   const pseudoTooLong = trimmedPseudo.length > 24;
-  const canJoin = trimmedPseudo.length > 0 && !pseudoTooLong && avatarReady && !submitting;
+  const avatarWillBeRandom = !selectedSticker && !(avatarTab === "draw" && hasDrawn);
+  const missingRequiredFields = [
+    ...(trimmedPseudo.length === 0 ? ["un pseudo"] : []),
+    ...(pseudoTooLong ? ["un pseudo plus court (24 caracteres max)"] : []),
+  ];
+  const canJoin = trimmedPseudo.length > 0 && !pseudoTooLong && !submitting;
 
   async function handleJoin() {
     const pseudoTrimmed = pseudo.trim();
@@ -50,16 +56,12 @@ export default function HomePage() {
       setError("pseudo");
       return;
     }
-    if (avatarTab === "draw" && !hasDrawn) {
-      setError("avatar");
-      return;
-    }
 
     setSubmitting(true);
     setError("");
 
-    const avatar_type = avatarTab;
-    const avatar_value = avatarTab === "sticker" ? selectedSticker : drawingDataUrl;
+    const avatar_type = avatarTab === "draw" && hasDrawn ? "draw" : "sticker";
+    const avatar_value = avatar_type === "draw" ? drawingDataUrl : fallbackStickerId;
     const supabase = getSupabaseBrowserClient();
 
     // Optimistic UI: stash the just-joined participant so /wall can render it instantly
@@ -178,7 +180,10 @@ export default function HomePage() {
             <div className="flex gap-2.5 mb-4 flex-wrap">
               <button
                 type="button"
-                onClick={() => setAvatarTab("sticker")}
+                onClick={() => {
+                  setAvatarTab("sticker");
+                  setError("");
+                }}
                 className="rounded-2xl font-display font-bold text-sm cursor-pointer flex items-center gap-2"
                 style={
                   avatarTab === "sticker"
@@ -190,7 +195,10 @@ export default function HomePage() {
               </button>
               <button
                 type="button"
-                onClick={() => setAvatarTab("draw")}
+                onClick={() => {
+                  setAvatarTab("draw");
+                  setError("");
+                }}
                 className="rounded-2xl font-display font-bold text-sm cursor-pointer flex items-center gap-2"
                 style={
                   avatarTab === "draw"
@@ -213,13 +221,13 @@ export default function HomePage() {
                     setError("");
                   }}
                 />
-                {error === "avatar" && (
-                  <div className="text-[#E8543E] text-sm font-semibold mt-2">
-                    Dessine ton petit chef-d&apos;œuvre avant de continuer 🎨
-                  </div>
-                )}
               </>
             )}
+            <div className="mt-3 font-body text-sm font-semibold text-ink/70">
+              {avatarWillBeRandom
+                ? "Pas d’avatar choisi ? On t’en attribue un au hasard."
+                : "Ton avatar est prêt."}
+            </div>
 
             <div className="mt-7 rounded-[26px] bg-white/60 p-4 sm:p-5" style={{ border: "2px solid #E5DFD3" }}>
               <div className="mb-2 font-display text-xl font-bold text-ink">3. TA VIBE</div>
@@ -305,6 +313,25 @@ export default function HomePage() {
               >
                 {submitting ? "ÇA PART EN SALLE..." : "REJOINDRE LA SALLE"} <span>→</span>
               </button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <div
+                  className={`rounded-full px-3 py-2 font-body text-sm font-semibold ${
+                    trimmedPseudo.length > 0 && !pseudoTooLong
+                      ? "bg-[#E7F8EF] text-[#1C7A4D]"
+                      : "bg-[#FFF1EC] text-[#B4492D]"
+                  }`}
+                >
+                  {trimmedPseudo.length > 0 && !pseudoTooLong ? "Pseudo OK" : "Pseudo requis"}
+                </div>
+                <div className="rounded-full bg-[#FFF8D9] px-3 py-2 font-body text-sm font-semibold text-[#8A6400]">
+                  {avatarWillBeRandom ? "Avatar aleatoire si besoin" : "Avatar choisi"}
+                </div>
+              </div>
+              {!canJoin && !submitting && missingRequiredFields.length > 0 && (
+                <div className="mt-3 rounded-2xl bg-[#FFF1EC] px-4 py-3 font-body text-sm font-semibold text-[#B4492D]">
+                  Complète encore {missingRequiredFields.join(" et ")} pour pouvoir rejoindre la salle.
+                </div>
+              )}
             </div>
           </div>
 

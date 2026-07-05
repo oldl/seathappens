@@ -3,7 +3,7 @@
 import { STICKER_DEFS, getStickerSrc } from "@/lib/stickers";
 
 interface StickerGridProps {
-  selectedId: string;
+  selectedId: string | null;
   onSelect: (id: string) => void;
 }
 
