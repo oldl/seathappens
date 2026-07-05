@@ -139,7 +139,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="mt-4 font-display text-[clamp(22px,4vw,30px)] font-extrabold text-ink">
-          Confession a vibe coder - 16/07 - 12h00/13h @Partenamut
+          Confessions a vibe coder - 16/07 - 12h00/13h Forum RDC
         </div>
 
         <div className="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,620px)_minmax(260px,1fr)] lg:gap-12">
