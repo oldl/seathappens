@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benchmark Authentification — Marché Belge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #0B0E14;
+    --panel: #131826;
+    --panel-2: #1A2033;
+    --border: #262E45;
+    --text: #E8EAED;
+    --muted: #8891A5;
+    --muted-2: #5A6478;
+
+    /* Grammaire de couleur réutilisée de la convention Olo (diagrammes auth) */
+    --purple: #9B8CE8;   /* strong auth / itsme */
+    --purple-dim: #9B8CE822;
+    --teal: #4FD1C5;     /* passkey natif confirmé */
+    --teal-dim: #4FD1C522;
+    --amber: #E8A33D;    /* à vérifier / contrainte */
+    --amber-dim: #E8A33D22;
+    --coral: #E8677D;    /* gap de donnée / absence */
+    --coral-dim: #E8677D22;
+    --gray: #6B7488;     /* non documenté / session */
+    --gray-dim: #6B748822;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at 15% 0%, #9B8CE812 0%, transparent 40%),
+      radial-gradient(circle at 90% 10%, #4FD1C50c 0%, transparent 45%);
+  }
+
+  .wrap{ max-width: 1180px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  /* ---------- HEADER ---------- */
+  header{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap: 24px; margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted-2); margin-bottom: 8px;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700;
+    letter-spacing: -0.01em; margin-bottom: 6px;
+  }
+  .subtitle{ color: var(--muted); font-size: 14px; max-width: 520px; line-height: 1.5;}
+
+  .status-block{ text-align:right; min-width: 220px; }
+  .sync-pill{
+    display:inline-flex; align-items:center; gap: 7px; font-family:'JetBrains Mono', monospace;
+    font-size: 11.5px; padding: 6px 12px; border-radius: 100px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--muted);
+  }
+  .sync-dot{ width: 7px; height: 7px; border-radius: 50%; background: var(--gray); flex-shrink:0; }
+  .sync-dot.live{ background: var(--teal); box-shadow: 0 0 8px #4FD1C5aa; }
+  .sync-dot.demo{ background: var(--amber); }
+  .sync-dot.error{ background: var(--coral); }
+  .sync-time{ display:block; margin-top:6px; font-size:11px; color: var(--muted-2); font-family:'JetBrains Mono', monospace;}
+
+  /* ---------- SETTINGS PANEL ---------- */
+  .settings{
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    margin-bottom: 24px; overflow: hidden;
+  }
+  .settings-toggle{
+    display:flex; align-items:center; justify-content:space-between; padding: 14px 18px;
+    cursor:pointer; user-select:none;
+  }
+  .settings-toggle:hover{ background: var(--panel-2); }
+  .settings-toggle-label{ display:flex; align-items:center; gap:10px; font-size:13.5px; font-weight:500; color: var(--text);}
+  .gear{ width:15px; height:15px; opacity:0.7; }
+  .chev{ color: var(--muted); font-size: 12px; transition: transform 0.2s; }
+  .chev.open{ transform: rotate(180deg); }
+
+  .settings-body{
+    display:none; padding: 4px 18px 20px; border-top: 1px solid var(--border);
+  }
+  .settings-body.open{ display:block; }
+  .settings-grid{
+    display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;
+  }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field.full{ grid-column: 1 / -1; }
+  .field label{ font-size: 11px; color: var(--muted); font-family:'JetBrains Mono', monospace; letter-spacing:0.03em;}
+  .field input{
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 11px; color: var(--text); font-size: 13px; font-family:'JetBrains Mono', monospace;
+    outline: none; transition: border-color 0.15s;
+  }
+  .field input:focus{ border-color: var(--purple); }
+  .field input::placeholder{ color: var(--muted-2); }
+
+  .settings-actions{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; align-items:center; }
+  button{
+    font-family:'Inter', sans-serif; font-size: 13px; font-weight: 600; border-radius: 9px;
+    padding: 9px 16px; cursor:pointer; border: 1px solid transparent; transition: all 0.15s;
+  }
+  .btn-primary{ background: var(--purple); color: #14101F; }
+  .btn-primary:hover{ filter: brightness(1.08); }
+  .btn-ghost{ background: transparent; color: var(--muted); border-color: var(--border); }
+  .btn-ghost:hover{ color: var(--text); border-color: var(--muted-2); }
+  .settings-hint{ font-size: 11.5px; color: var(--muted-2); line-height:1.5; margin-top:12px; }
+  .settings-hint code{ background: var(--panel-2); padding: 1px 5px; border-radius:4px; font-family:'JetBrains Mono', monospace; color: var(--teal); }
+  .error-msg{ color: var(--coral); font-size: 12px; margin-top:10px; font-family:'JetBrains Mono', monospace; }
+
+  /* ---------- STATS ---------- */
+  .stats{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+  .stat-card{
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px;
+  }
+  .stat-num{ font-family:'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; }
+  .stat-label{ font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+  .stat-card.teal .stat-num{ color: var(--teal); }
+  .stat-card.amber .stat-num{ color: var(--amber); }
+  .stat-card.coral .stat-num{ color: var(--coral); }
+  .stat-card.purple .stat-num{ color: var(--purple); }
+
+  /* ---------- FILTERS ---------- */
+  .controls{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; gap: 16px; flex-wrap:wrap;}
+  .tabs{ display:flex; gap: 6px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+  .tab{
+    font-family:'JetBrains Mono', monospace; font-size: 12px; padding: 7px 14px; border-radius: 7px;
+    color: var(--muted); cursor:pointer; transition: all 0.15s; border:none; background:transparent; font-weight:500;
+  }
+  .tab.active{ background: var(--purple); color: #14101F; }
+  .tab:not(.active):hover{ color: var(--text); }
+
+  .search{
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 14px; color: var(--text); font-size: 13px; width: 240px; outline:none;
+  }
+  .search:focus{ border-color: var(--purple); }
+  .search::placeholder{ color: var(--muted-2); }
+
+  /* ---------- TABLE / CARDS ---------- */
+  .rows{ display:flex; flex-direction:column; gap: 10px; }
+  .row{
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px; cursor:pointer; transition: border-color 0.15s, background 0.15s;
+  }
+  .row:hover{ border-color: var(--muted-2); background: var(--panel-2); }
+  .row-top{ display:grid; grid-template-columns: 90px 1.4fr 1.6fr 120px 90px; gap: 14px; align-items:center; }
+  .sector-tag{
+    font-family:'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing:0.05em; text-transform:uppercase;
+    padding: 4px 9px; border-radius: 100px; text-align:center; white-space:nowrap; width: fit-content;
+  }
+  .sector-tag.banque{ background: var(--purple-dim); color: var(--purple); }
+  .sector-tag.assurance{ background: var(--amber-dim); color: var(--amber); }
+  .sector-tag.mutuelle{ background: var(--teal-dim); color: var(--teal); }
+
+  .actor-name{ font-weight: 600; font-size: 14px; }
+  .method-text{ font-size: 12.5px; color: var(--muted); line-height:1.4; }
+
+  .badge{
+    font-family:'JetBrains Mono', monospace; font-size: 10.5px; padding: 4px 9px; border-radius: 6px;
+    text-align:center; white-space:nowrap; width: fit-content; justify-self:start;
+    display:flex; align-items:center; gap:5px;
+  }
+  .badge-dot{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+  .badge.oui{ background: var(--teal-dim); color: var(--teal); }
+  .badge.oui .badge-dot{ background: var(--teal); }
+  .badge.non{ background: var(--gray-dim); color: var(--muted); }
+  .badge.non .badge-dot{ background: var(--gray); }
+  .badge.verifier{ background: var(--amber-dim); color: var(--amber); }
+  .badge.verifier .badge-dot{ background: var(--amber); }
+  .badge.gap{ background: var(--coral-dim); color: var(--coral); }
+  .badge.gap .badge-dot{ background: var(--coral); }
+
+  .confidence{ display:flex; gap: 3px; justify-self:end; }
+  .conf-dot{ width: 6px; height: 14px; border-radius: 2px; background: var(--border); }
+  .conf-dot.on{ background: var(--purple); }
+
+  .row-detail{
+    display:none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border);
+    font-size: 12.5px; color: var(--muted); line-height: 1.6;
+  }
+  .row-detail.open{ display:block; }
+  .row-detail .detail-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; }
+  .row-detail strong{ color: var(--text); font-weight:600; }
+  .row-detail a{ color: var(--teal); text-decoration:none; }
+  .row-detail a:hover{ text-decoration:underline; }
+
+  .empty{
+    text-align:center; padding: 60px 20px; color: var(--muted-2); font-size: 13px;
+    border: 1px dashed var(--border); border-radius: 12px;
+  }
+
+  footer{
+    margin-top: 28px; display:flex; justify-content:space-between; align-items:center;
+    font-size: 11.5px; color: var(--muted-2); font-family:'JetBrains Mono', monospace; flex-wrap:wrap; gap:8px;
+  }
+  .legend{ display:flex; gap: 14px; flex-wrap:wrap; }
+  .legend-item{ display:flex; align-items:center; gap:5px; }
+  .legend-dot{ width:6px; height:6px; border-radius:50%; }
+
+  @media (max-width: 760px){
+    .row-top{ grid-template-columns: 1fr; gap: 8px; }
+    .confidence{ justify-self:start; }
+    .stats{ grid-template-columns: repeat(2, 1fr); }
+    .settings-grid{ grid-template-columns: 1fr; }
+    .search{ width: 100%; }
+    .controls{ flex-direction:column; align-items:stretch; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">Login &amp; Espace Connecté — Veille marché</div>
+      <h1>Benchmark Authentification — Belgique</h1>
+      <div class="subtitle">Banque · Assurance · Mutuelle — passkey natif, rôle d'itsme, fallback. Alimenté depuis Airtable.</div>
+    </div>
+    <div class="status-block">
+      <span class="sync-pill" id="syncPill">
+        <span class="sync-dot demo" id="syncDot"></span>
+        <span id="syncLabel">Données de démonstration</span>
+      </span>
+      <span class="sync-time" id="syncTime">—</span>
+    </div>
+  </header>
+
+  <div class="settings">
+    <div class="settings-toggle" onclick="toggleSettings()">
+      <div class="settings-toggle-label">
+        <svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Connexion Airtable
+      </div>
+      <span class="chev" id="chev">▾</span>
+    </div>
+    <div class="settings-body" id="settingsBody">
+      <div class="settings-grid">
+        <div class="field">
+          <label>BASE ID</label>
+          <input type="text" id="baseId" placeholder="appXXXXXXXXXXXXXX">
+        </div>
+        <div class="field">
+          <label>NOM DE LA TABLE</label>
+          <input type="text" id="tableName" placeholder="Auth_Benchmark" value="Auth_Benchmark">
+        </div>
+        <div class="field full">
+          <label>PERSONAL ACCESS TOKEN (session uniquement — jamais sauvegardé)</label>
+          <input type="password" id="pat" placeholder="patXXXXXXXXXXXXXX.XXXXXXXX">
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn-primary" onclick="connectAirtable()">Connecter &amp; charger</button>
+        <button class="btn-ghost" onclick="loadDemo()">Revenir aux données de démo</button>
+        <button class="btn-ghost" onclick="refreshData()">↻ Rafraîchir</button>
+      </div>
+      <div class="error-msg" id="errorMsg"></div>
+      <div class="settings-hint">
+        Table Airtable attendue avec les colonnes : <code>Secteur</code> (Banque/Assurance/Mutuelle),
+        <code>Acteur</code>, <code>Methode_Principale</code>, <code>Passkey_Natif</code> (Oui/Non/À vérifier/Gap de données),
+        <code>Role_Itsme</code>, <code>Fallback</code>, <code>Fiabilite_Source</code> (Élevée/Moyenne/Faible),
+        <code>Notes</code>, <code>Source_URL</code>.<br>
+        Le token reste en mémoire de l'onglet — il n'est jamais écrit sur disque. À reconnecter à chaque ouverture.
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card purple"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Acteurs analysés</div></div>
+    <div class="stat-card teal"><div class="stat-num" id="statConfirmed">—</div><div class="stat-label">Passkey natif confirmé</div></div>
+    <div class="stat-card amber"><div class="stat-num" id="statVerify">—</div><div class="stat-label">À vérifier</div></div>
+    <div class="stat-card coral"><div class="stat-num" id="statGap">—</div><div class="stat-label">Gaps de données</div></div>
+  </div>
+
+  <div class="controls">
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-sector="Tous" onclick="setSector('Tous')">Tous</button>
+      <button class="tab" data-sector="Banque" onclick="setSector('Banque')">Banque</button>
+      <button class="tab" data-sector="Assurance" onclick="setSector('Assurance')">Assurance</button>
+      <button class="tab" data-sector="Mutuelle" onclick="setSector('Mutuelle')">Mutuelle</button>
+    </div>
+    <input type="text" class="search" id="searchInput" placeholder="Rechercher un acteur…" oninput="render()">
+  </div>
+
+  <div class="rows" id="rows"></div>
+
+  <footer>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background:var(--teal)"></span>Passkey confirmé</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>À vérifier</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--coral)"></span>Gap de donnée</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--gray)"></span>Non documenté</span>
+    </div>
+    <div>Mise à jour des données : directement dans Airtable, puis « Rafraîchir » ici.</div>
+  </footer>
+
+</div>
+
+<script>
+  const DEMO_DATA = [
+    { Secteur:"Banque", Acteur:"KBC / CBC / KBC Brussels", Methode_Principale:"Lecteur de carte (digipass) + PIN, app KBC Mobile (PIN/biométrie), ou itsme", Passkey_Natif:"Non", Role_Itsme:"Option de connexion alternative", Fallback:"Lecteur de carte physique", Fiabilite_Source:"Élevée", Notes:"Non documenté publiquement comme méthode WebAuthn distincte.", Source_URL:"" },
+    { Secteur:"Banque", Acteur:"Belfius", Methode_Principale:"App Belfius Mobile + PIN/biométrie, itsme, lecteur de carte pour intégration multi-banques", Passkey_Natif:"Non", Role_Itsme:"Utilisé pour connexion/signature", Fallback:"Lecteur de carte", Fiabilite_Source:"Élevée", Notes:"", Source_URL:"" },
+    { Secteur:"Banque", Acteur:"BNP Paribas Fortis / ING Belgique", Methode_Principale:"App bancaire (Easy Banking / ING Banking) + PIN/biométrie, itsme", Passkey_Natif:"Non", Role_Itsme:"Membre fondateur du consortium itsme", Fallback:"Carte + lecteur", Fiabilite_Source:"Élevée", Notes:"", Source_URL:"" },
+    { Secteur:"Banque", Acteur:"« My CBC » — rollout passkey obligatoire cité (mars 2026)", Methode_Principale:"Non confirmé", Passkey_Natif:"À vérifier", Role_Itsme:"—", Fallback:"—", Fiabilite_Source:"Faible", Notes:"Source Corbado liste ce cas parmi des banques internationales (Chase, DCU…). Pas confirmé qu'il s'agisse du CBC belge du groupe KBC plutôt qu'une entité homonyme. Ne pas citer sans vérification directe.", Source_URL:"https://www.corbado.com/faq/banking-passkeys" },
+    { Secteur:"Assurance", Acteur:"AG Insurance, Ethias, etc.", Methode_Principale:"Non trouvé de données publiques spécifiques", Passkey_Natif:"Gap de données", Role_Itsme:"Généralement intégré comme option assureur", Fallback:"—", Fiabilite_Source:"Faible", Notes:"Aucune source fiable trouvée publiquement — gap à ne pas combler par extrapolation.", Source_URL:"" },
+    { Secteur:"Assurance", Acteur:"ENGIE Belgique (référence UX hors secteur)", Methode_Principale:"Passkey natif proposé en option, activable après premier login classique", Passkey_Natif:"Oui", Role_Itsme:"Option de connexion parallèle, mise en avant égale au passkey", Fallback:"itsme + code SMS", Fiabilite_Source:"Élevée", Notes:"Cas le plus concret et transférable trouvé en Belgique, hors assurance/mutuelle stricto sensu. Pattern : passkey et itsme traités à égalité, pas hiérarchisés.", Source_URL:"https://www.engie.be/fr/connexion-securisee/" },
+    { Secteur:"Mutuelle", Acteur:"Mutualité chrétienne (MC)", Methode_Principale:"itsme comme méthode de connexion citée", Passkey_Natif:"Non documenté", Role_Itsme:"Rôle central", Fallback:"Login classique / mot de passe", Fiabilite_Source:"Moyenne", Notes:"Source tierce, pas le site officiel de la mutuelle.", Source_URL:"" },
+    { Secteur:"Mutuelle", Acteur:"Solidaris", Methode_Principale:"itsme comme méthode de connexion citée", Passkey_Natif:"Non documenté", Role_Itsme:"Rôle central", Fallback:"Login classique / mot de passe", Fiabilite_Source:"Moyenne", Notes:"", Source_URL:"" },
+    { Secteur:"Mutuelle", Acteur:"Mutualités libres / Neutral", Methode_Principale:"itsme comme méthode de connexion citée", Passkey_Natif:"Non documenté", Role_Itsme:"Rôle central", Fallback:"Login classique / mot de passe", Fiabilite_Source:"Moyenne", Notes:"", Source_URL:"" },
+    { Secteur:"Mutuelle", Acteur:"Partenamut (nous)", Methode_Principale:"itsme (CSAM) comme ancre d'activation — north star : passkey en méthode quotidienne", Passkey_Natif:"À vérifier", Role_Itsme:"Ancre d'activation, pas login quotidien (cible)", Fallback:"Mot de passe permanent (cible)", Fiabilite_Source:"Élevée", Notes:"Dépend de la confirmation ForgeRock/Sven Boven sur le support du flux default-first.", Source_URL:"" },
+  ];
+
+  let liveData = null;
+  let currentSector = "Tous";
+  let expandedRow = null;
+
+  function toggleSettings(){
+    document.getElementById('settingsBody').classList.toggle('open');
+    document.getElementById('chev').classList.toggle('open');
+  }
+
+  function setSyncStatus(mode, label){
+    const dot = document.getElementById('syncDot');
+    dot.className = 'sync-dot ' + mode;
+    document.getElementById('syncLabel').textContent = label;
+    document.getElementById('syncTime').textContent = 'Dernière sync : ' + new Date().toLocaleTimeString('fr-BE');
+  }
+
+  function loadDemo(){
+    liveData = null;
+    document.getElementById('errorMsg').textContent = '';
+    setSyncStatus('demo', 'Données de démonstration');
+    render();
+  }
+
+  async function connectAirtable(){
+    const baseId = document.getElementById('baseId').value.trim();
+    const tableName = document.getElementById('tableName').value.trim();
+    const pat = document.getElementById('pat').value.trim();
+    const errorEl = document.getElementById('errorMsg');
+    errorEl.textContent = '';
+
+    if(!baseId || !tableName || !pat){
+      errorEl.textContent = 'Renseignez Base ID, nom de table et token avant de connecter.';
+      return;
+    }
+
+    setSyncStatus('demo', 'Connexion en cours…');
+
+    try{
+      const url = `https://api.airtable.com/v0/${encodeURIComponent(baseId)}/${encodeURIComponent(tableName)}`;
+      const res = await fetch(url, {
+        headers: { 'Authorization': 'Bearer ' + pat }
+      });
+      if(!res.ok){
+        throw new Error('HTTP ' + res.status + ' — vérifiez Base ID, nom de table et permissions du token.');
+      }
+      const data = await res.json();
+      const records = (data.records || []).map(r => ({
+        Secteur: r.fields.Secteur || 'Non classé',
+        Acteur: r.fields.Acteur || 'Sans nom',
+        Methode_Principale: r.fields.Methode_Principale || '',
+        Passkey_Natif: r.fields.Passkey_Natif || 'Non documenté',
+        Role_Itsme: r.fields.Role_Itsme || '',
+        Fallback: r.fields.Fallback || '',
+        Fiabilite_Source: r.fields.Fiabilite_Source || 'Moyenne',
+        Notes: r.fields.Notes || '',
+        Source_URL: r.fields.Source_URL || ''
+      }));
+      liveData = records;
+      setSyncStatus('live', 'Connecté à Airtable (' + records.length + ' lignes)');
+      render();
+    }catch(err){
+      setSyncStatus('error', 'Erreur de connexion');
+      errorEl.textContent = err.message;
+    }
+  }
+
+  function refreshData(){
+    if(document.getElementById('pat').value.trim()){
+      connectAirtable();
+    }else{
+      render();
+    }
+  }
+
+  function setSector(s){
+    currentSector = s;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.sector === s));
+    render();
+  }
+
+  function badgeClass(val){
+    if(!val) return 'non';
+    const v = val.toLowerCase();
+    if(v.includes('oui')) return 'oui';
+    if(v.includes('vérifier') || v.includes('verifier')) return 'verifier';
+    if(v.includes('gap')) return 'gap';
+    return 'non';
+  }
+
+  function confidenceDots(val){
+    const v = (val || '').toLowerCase();
+    let n = 1;
+    if(v.includes('élevée') || v.includes('elevee')) n = 3;
+    else if(v.includes('moyenne')) n = 2;
+    else n = 1;
+    let html = '';
+    for(let i=0;i<3;i++){
+      html += `<div class="conf-dot ${i < n ? 'on' : ''}"></div>`;
+    }
+    return html;
+  }
+
+  function sectorClass(s){
+    const v = (s || '').toLowerCase();
+    if(v.includes('banque')) return 'banque';
+    if(v.includes('assurance')) return 'assurance';
+    if(v.includes('mutuelle')) return 'mutuelle';
+    return 'banque';
+  }
+
+  function toggleRow(idx){
+    expandedRow = expandedRow === idx ? null : idx;
+    render();
+  }
+
+  function render(){
+    const data = liveData || DEMO_DATA;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+
+    let filtered = data.filter(d => {
+      const sectorMatch = currentSector === 'Tous' || (d.Secteur || '').includes(currentSector);
+      const searchMatch = !search || (d.Acteur || '').toLowerCase().includes(search) || (d.Methode_Principale || '').toLowerCase().includes(search);
+      return sectorMatch && searchMatch;
+    });
+
+    // Stats sur l'ensemble (pas juste le filtre) pour rester une vue marché stable
+    document.getElementById('statTotal').textContent = data.length;
+    document.getElementById('statConfirmed').textContent = data.filter(d => (d.Passkey_Natif||'').toLowerCase().includes('oui')).length;
+    document.getElementById('statVerify').textContent = data.filter(d => (d.Passkey_Natif||'').toLowerCase().includes('vérifier') || (d.Passkey_Natif||'').toLowerCase().includes('verifier')).length;
+    document.getElementById('statGap').textContent = data.filter(d => (d.Passkey_Natif||'').toLowerCase().includes('gap') || (d.Passkey_Natif||'').toLowerCase().includes('non documenté') || (d.Passkey_Natif||'').toLowerCase().includes('non documente')).length;
+
+    const rowsEl = document.getElementById('rows');
+    if(filtered.length === 0){
+      rowsEl.innerHTML = '<div class="empty">Aucun acteur ne correspond à ce filtre.</div>';
+      return;
+    }
+
+    rowsEl.innerHTML = filtered.map((d, idx) => {
+      const bClass = badgeClass(d.Passkey_Natif);
+      const sClass = sectorClass(d.Secteur);
+      const isOpen = expandedRow === idx;
+      return `
+        <div class="row" onclick="toggleRow(${idx})">
+          <div class="row-top">
+            <span class="sector-tag ${sClass}">${d.Secteur || '—'}</span>
+            <span class="actor-name">${escapeHtml(d.Acteur)}</span>
+            <span class="method-text">${escapeHtml(d.Methode_Principale)}</span>
+            <span class="badge ${bClass}"><span class="badge-dot"></span>${escapeHtml(d.Passkey_Natif || 'Non documenté')}</span>
+            <span class="confidence">${confidenceDots(d.Fiabilite_Source)}</span>
+          </div>
+          <div class="row-detail ${isOpen ? 'open' : ''}">
+            <div class="detail-grid">
+              <div><strong>Rôle d'itsme :</strong> ${escapeHtml(d.Role_Itsme) || '—'}</div>
+              <div><strong>Fallback :</strong> ${escapeHtml(d.Fallback) || '—'}</div>
+              <div style="grid-column:1/-1;"><strong>Notes :</strong> ${escapeHtml(d.Notes) || '—'}</div>
+              ${d.Source_URL ? `<div style="grid-column:1/-1;"><strong>Source :</strong> <a href="${escapeHtml(d.Source_URL)}" target="_blank" onclick="event.stopPropagation()">${escapeHtml(d.Source_URL)}</a></div>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function escapeHtml(str){
+    if(!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // Init
+  setSyncStatus('demo', 'Données de démonstration');
+  render();
+</script>
+</body>
+</html>

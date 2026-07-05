@@ -11,6 +11,7 @@ import AvatarPreview from "@/components/AvatarPreview";
 type AvatarTab = "sticker" | "draw";
 type ErrorKind = "" | "pseudo" | "avatar" | "duplicate" | "server";
 const JUST_JOINED_KEY = "seathappens_just_joined";
+const VIBE_SEPARATOR = " • ";
 const VIBE_OPTIONS = [
   "🚀 Lancer un side-project",
   "🎨 Faire un truc creatif",
@@ -24,7 +25,7 @@ const VIBE_OPTIONS = [
 export default function HomePage() {
   const router = useRouter();
   const [pseudo, setPseudo] = useState("");
-  const [projectIdea, setProjectIdea] = useState("");
+  const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [themeFocus, setThemeFocus] = useState("");
   const [avatarTab, setAvatarTab] = useState<AvatarTab>("sticker");
   const [selectedSticker, setSelectedSticker] = useState(STICKER_DEFS[0].id);
@@ -38,7 +39,7 @@ export default function HomePage() {
 
   const avatarReady = avatarTab === "sticker" ? true : hasDrawn;
   const trimmedPseudo = pseudo.trim();
-  const trimmedProjectIdea = projectIdea.trim();
+  const serializedVibes = selectedVibes.join(VIBE_SEPARATOR);
   const trimmedThemeFocus = themeFocus.trim();
   const pseudoTooLong = trimmedPseudo.length > 24;
   const canJoin = trimmedPseudo.length > 0 && !pseudoTooLong && avatarReady && !submitting;
@@ -68,7 +69,7 @@ export default function HomePage() {
         JUST_JOINED_KEY,
         JSON.stringify({
           pseudo: pseudoTrimmed,
-          project_idea: trimmedProjectIdea,
+          project_idea: serializedVibes,
           theme_focus: trimmedThemeFocus,
           avatar_type,
           avatar_value,
@@ -88,7 +89,7 @@ export default function HomePage() {
       .from("participants")
       .insert({
         pseudo: pseudoTrimmed,
-        project_idea: trimmedProjectIdea,
+        project_idea: serializedVibes,
         theme_focus: trimmedThemeFocus,
         avatar_type,
         avatar_value,
@@ -138,7 +139,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="mt-4 font-display text-[clamp(22px,4vw,30px)] font-extrabold text-ink">
-          Confession a vibe coder - 16/07
+          Confession a vibe coder - 16/07 - 12h00/13h @Partenamut
         </div>
 
         <div className="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,620px)_minmax(260px,1fr)] lg:gap-12">
@@ -153,7 +154,7 @@ export default function HomePage() {
               }}
               placeholder="Ton pseudo"
               maxLength={24}
-              className="w-full box-border rounded-2xl bg-white px-4.5 py-4 font-body text-base font-medium outline-none transition focus:border-sh-purple"
+              className="w-full box-border rounded-2xl bg-white pl-6 pr-4.5 py-4 font-body text-base font-medium outline-none transition focus:border-sh-purple"
               style={{ border: `2px solid ${error === "pseudo" || error === "duplicate" ? "#E8543E" : "#E5DFD3"}` }}
             />
             <div className="mt-2 flex items-center justify-between gap-3 text-sm">
@@ -223,17 +224,19 @@ export default function HomePage() {
             <div className="mt-7 rounded-[26px] bg-white/60 p-4 sm:p-5" style={{ border: "2px solid #E5DFD3" }}>
               <div className="mb-2 font-display text-xl font-bold text-ink">3. TA VIBE</div>
               <div className="mb-3 font-body text-sm font-semibold text-ink">
-                Optionnel. Clique sur la vibe qui te ressemble le plus.
+                Optionnel. Tu peux en choisir plusieurs.
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {VIBE_OPTIONS.map((option) => {
-                  const isSelected = projectIdea === option;
+                  const isSelected = selectedVibes.includes(option);
                   return (
                     <button
                       key={option}
                       type="button"
                       onClick={() => {
-                        setProjectIdea(isSelected ? "" : option);
+                        setSelectedVibes((current) =>
+                          current.includes(option) ? current.filter((item) => item !== option) : [...current, option]
+                        );
                         setError("");
                       }}
                       className="rounded-2xl px-4 py-3 text-left font-body text-sm font-semibold transition"
@@ -249,16 +252,16 @@ export default function HomePage() {
                   );
                 })}
               </div>
-              {projectIdea && (
+              {selectedVibes.length > 0 && (
                 <button
                   type="button"
                   onClick={() => {
-                    setProjectIdea("");
+                    setSelectedVibes([]);
                     setError("");
                   }}
                   className="mt-3 rounded-full bg-white px-3 py-1.5 font-body text-xs font-semibold text-ink/65"
                 >
-                  Effacer mon vote
+                  Effacer mes choix
                 </button>
               )}
               <label className="mt-4 block">
@@ -271,7 +274,7 @@ export default function HomePage() {
                     setThemeFocus(e.target.value);
                     setError("");
                   }}
-                  placeholder="Une idee, une blague, un contexte, un cri du coeur..."
+                  placeholder="Une idee, une confession, un cri du coeur..."
                   rows={4}
                   className="w-full resize-none rounded-2xl border-2 border-[#E5DFD3] bg-white px-4 py-3 font-body text-sm font-medium text-ink outline-none transition"
                 />
@@ -283,12 +286,22 @@ export default function HomePage() {
                 type="button"
                 onClick={handleJoin}
                 disabled={!canJoin}
-                className="flex w-full items-center justify-center gap-3 rounded-full border-none px-8 py-5 font-display text-xl font-bold tracking-wide transition-transform duration-150 disabled:translate-y-0"
+                className="flex w-full items-center justify-center gap-3 rounded-full border-none px-8 py-5 font-display text-xl font-bold tracking-wide transition-colors duration-150 disabled:translate-y-0"
                 style={
                   canJoin
                     ? { background: "#1A1A1A", color: "#fff", cursor: "pointer" }
                     : { background: "#E5DFD3", color: "#9C9585", cursor: "not-allowed" }
                 }
+                onMouseEnter={(event) => {
+                  if (!canJoin) return;
+                  event.currentTarget.style.background = "#FFD93D";
+                  event.currentTarget.style.color = "#1A1A1A";
+                }}
+                onMouseLeave={(event) => {
+                  if (!canJoin) return;
+                  event.currentTarget.style.background = "#1A1A1A";
+                  event.currentTarget.style.color = "#ffffff";
+                }}
               >
                 {submitting ? "ÇA PART EN SALLE..." : "REJOINDRE LA SALLE"} <span>→</span>
               </button>

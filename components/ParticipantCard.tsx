@@ -7,7 +7,7 @@ interface ParticipantCardProps {
 }
 
 export default function ParticipantCard({ pseudo, src, projectIdea, themeFocus, onOpen }: ParticipantCardProps) {
-  const teaser = projectIdea || themeFocus || "Clique pour en savoir plus";
+  const teaser = projectIdea ? `${projectIdea.split(" • ").length} vibes choisies` : themeFocus || "Clique pour en savoir plus";
 
   return (
     <button

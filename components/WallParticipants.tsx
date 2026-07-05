@@ -15,6 +15,13 @@ function normalizePseudo(value: string) {
   return value.trim().toLocaleLowerCase();
 }
 
+function splitVibes(value: string) {
+  return value
+    .split(" • ")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export default function WallParticipants({ initialParticipants }: WallParticipantsProps) {
   const [optimisticParticipant, setOptimisticParticipant] = useState<Participant | null>(null);
   const [activeParticipant, setActiveParticipant] = useState<Participant | null>(null);
@@ -133,9 +140,16 @@ export default function WallParticipants({ initialParticipants }: WallParticipan
             {activeParticipant.project_idea && (
               <div className="mt-5 rounded-[24px] bg-white px-4 py-4 shadow-[0_4px_0_rgba(0,0,0,0.05)]">
                 <div className="font-body text-xs font-bold uppercase tracking-[0.18em] text-ink/45">Vote vibe</div>
-                <p className="mt-2 font-body text-base font-medium leading-relaxed text-ink">
-                  {activeParticipant.project_idea}
-                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {splitVibes(activeParticipant.project_idea).map((vibe) => (
+                    <div
+                      key={vibe}
+                      className="rounded-full bg-sh-yellow px-3 py-2 font-body text-sm font-semibold text-ink"
+                    >
+                      {vibe}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
