@@ -6,6 +6,14 @@ import { getSupabaseServerClient } from "@/lib/supabaseClient";
 // Always fetch a fresh participant list — this is a live public wall.
 export const dynamic = "force-dynamic";
 
+function getSupabaseProjectRef() {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "").hostname.split(".")[0] || "inconnu";
+  } catch {
+    return "URL invalide";
+  }
+}
+
 export default async function WallPage() {
   const supabase = getSupabaseServerClient();
   let participants: Participant[] = [];
@@ -18,7 +26,15 @@ export default async function WallPage() {
     const { data, error } = await supabase.from("participants").select("*").order("created_at", { ascending: false });
 
     if (error) {
-      errorMessage = "Impossible de charger la liste pour l'instant. Vérifie ta configuration Supabase (.env.local).";
+      const projectRef = getSupabaseProjectRef();
+      console.error("Supabase wall query failed", {
+        projectRef,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      errorMessage = `Supabase (${projectRef}) : ${error.code || "erreur"} — ${error.message}`;
     } else {
       participants = (data as Participant[]) || [];
     }
