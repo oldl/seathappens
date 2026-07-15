@@ -1,8 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
+import { useRef, useState } from "react";
 import { STICKER_DEFS, getStickerSrc } from "@/lib/stickers";
 import StickerGrid from "@/components/StickerGrid";
 import DrawCanvas from "@/components/DrawCanvas";
@@ -34,6 +33,8 @@ export default function HomePage() {
   const [hasDrawn, setHasDrawn] = useState(false);
   const [error, setError] = useState<ErrorKind>("");
   const [submitting, setSubmitting] = useState(false);
+  const [pseudoHighlighted, setPseudoHighlighted] = useState(false);
+  const pseudoInputRef = useRef<HTMLInputElement | null>(null);
 
   const fallbackStickerId = selectedSticker ?? randomStickerId;
   const previewSrc =
@@ -50,6 +51,14 @@ export default function HomePage() {
   ];
   const canJoin = trimmedPseudo.length > 0 && !pseudoTooLong && !submitting;
 
+  function jumpToPseudo() {
+    setPseudoHighlighted(true);
+    window.location.hash = "pseudo-field";
+    pseudoInputRef.current?.focus();
+    pseudoInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => setPseudoHighlighted(false), 1800);
+  }
+
   async function handleJoin() {
     const pseudoTrimmed = pseudo.trim();
     if (!pseudoTrimmed || pseudoTooLong) {
@@ -62,7 +71,6 @@ export default function HomePage() {
 
     const avatar_type = avatarTab === "draw" && hasDrawn ? "draw" : "sticker";
     const avatar_value = avatar_type === "draw" ? drawingDataUrl : fallbackStickerId;
-    const supabase = getSupabaseBrowserClient();
 
     // Optimistic UI: stash the just-joined participant so /wall can render it instantly
     // even before the round trip to Supabase settles.
@@ -81,31 +89,33 @@ export default function HomePage() {
       // sessionStorage may be unavailable — non-fatal, wall will just fetch fresh
     }
 
-    if (!supabase) {
-      setSubmitting(false);
-      setError("server");
-      return;
+    let response: Response;
+    try {
+      // Keep the browser on the same origin. The server talks to Supabase so
+      // enterprise firewalls never need to allow a direct *.supabase.co call.
+      response = await fetch("/api/participants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pseudo: pseudoTrimmed,
+          project_idea: serializedVibes,
+          theme_focus: trimmedThemeFocus,
+          avatar_type,
+          avatar_value,
+        }),
+      });
+    } catch {
+      response = new Response(null, { status: 503 });
     }
 
-    const { error: insertError } = await supabase
-      .from("participants")
-      .insert({
-        pseudo: pseudoTrimmed,
-        project_idea: serializedVibes,
-        theme_focus: trimmedThemeFocus,
-        avatar_type,
-        avatar_value,
-      });
-
-    if (insertError) {
+    if (!response.ok) {
       setSubmitting(false);
       try {
         sessionStorage.removeItem(JUST_JOINED_KEY);
       } catch {
         // Ignore sessionStorage failures while rolling back the optimistic flow.
       }
-      // Postgres unique_violation on the case-insensitive pseudo index
-      if (insertError.code === "23505") {
+      if (response.status === 409) {
         setError("duplicate");
       } else {
         setError("server");
@@ -146,18 +156,27 @@ export default function HomePage() {
 
         <div className="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,620px)_minmax(260px,1fr)] lg:gap-12">
           <div>
-            <div className="font-display font-bold text-xl text-ink mb-3">1. TON PSEUDO <span className="text-[#E8543E]">*</span></div>
+            <div id="pseudo-field" className="font-display font-bold text-xl text-ink mb-3">
+              1. TON PSEUDO <span className="text-[#E8543E]">*</span>
+            </div>
             <input
+              ref={pseudoInputRef}
               type="text"
               value={pseudo}
               onChange={(e) => {
                 setPseudo(e.target.value);
                 setError("");
+                setPseudoHighlighted(false);
               }}
               placeholder="Ton pseudo"
               maxLength={24}
               className="w-full box-border rounded-2xl bg-white pl-6 pr-4.5 py-4 font-body text-base font-medium outline-none transition focus:border-sh-purple"
-              style={{ border: `2px solid ${error === "pseudo" || error === "duplicate" ? "#E8543E" : "#E5DFD3"}` }}
+              style={{
+                border: `2px solid ${
+                  error === "pseudo" || error === "duplicate" || pseudoHighlighted ? "#E8543E" : "#E5DFD3"
+                }`,
+                boxShadow: pseudoHighlighted ? "0 0 0 5px rgba(232, 84, 62, 0.18)" : "none",
+              }}
             />
             <div className="mt-2 flex items-center justify-between gap-3 text-sm">
               <div>
@@ -330,6 +349,18 @@ export default function HomePage() {
               {!canJoin && !submitting && missingRequiredFields.length > 0 && (
                 <div className="mt-3 rounded-2xl bg-[#FFF1EC] px-4 py-3 font-body text-sm font-semibold text-[#B4492D]">
                   Complète encore {missingRequiredFields.join(" et ")} pour pouvoir rejoindre la salle.
+                  {missingRequiredFields.includes("un pseudo") && (
+                    <>
+                      {" "}
+                      <button
+                        type="button"
+                        onClick={jumpToPseudo}
+                        className="font-extrabold underline underline-offset-2"
+                      >
+                        Aller au pseudo
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
